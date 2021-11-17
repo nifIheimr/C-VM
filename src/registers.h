@@ -10,7 +10,9 @@ typedef enum {
 	D,
 	X,
 	Y,
-	NUM_OF_REGISTERS //Will automatically be equal to the total number of registers present in our machine
+	PC,
+	SP,
+	REG_SIZE //Will automatically be equal to the total number of registers present in our machine
 } Registers;
 
 

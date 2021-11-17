@@ -24,6 +24,12 @@
 
 #define STACK_SIZE 256
 
+//********
+//*MACROS*
+//********
+#define SP (REGISTERS[SP])
+#define PC (REGISTERS[PC])
+
 //***********
 //*FUNCTIONS*
 //***********
@@ -35,19 +41,21 @@ void eval(int inst);
 //*VARIABLES*
 //***********
 
-//We'll use an index instead of an actual pointer
-int PC = 0; //Program counter
-int SP = -1; //Stack pointer
+static int STACK[STACK_SIZE];
+static int REGISTERS[REG_SIZE]; //Set register: REGISTER[A] = value;
 
-int STACK[STACK_SIZE];
-int REGISTER[NUM_OF_REGISTERS]; //Set register: REGISTER[A] = value;
+int *instructions;
+int inst_size = 4;
 
 bool running = true;
 
 int main() {
+	SP = -1; //Init stack pointer
+
+	instructions = malloc(sizeof(*instructions) * inst_size);
 
 	while(running) { //Machine execution loop
-		eval(fetch());
+		eval(fetch()); //Automatically evaluates (decodes) each fetched instruction
 		PC++; //Increments Program Counter
 	}
 
@@ -57,18 +65,18 @@ int main() {
 //Funtion declaration
 
 int fetch() {
-	return program[PC];
+	return instructions[PC];
 }
 
 void eval(int inst) {
 	switch(inst) {
 		case HLT: { //Halts program
 			running = false;
+			printf("HALTING EXECUTION\n");
 			break;
 		}
 		case PSH: { //Pushes data to stack, increments SP
-			SP++;
-			STACK[SP] = program[++PC];
+			STACK[++SP] = instructions[++PC];
 			break;
 		}
 		case POP: { //Decrements SP as it removes data from STACK
@@ -77,11 +85,34 @@ void eval(int inst) {
 			break;
 		}
 		case ADD: { //Adds the two topmost values stored on the stack and stores the value again
-			int A = STACK[SP--]; //Pops topmost value to a
-			int B = STACK[SP--]; //Pops next topmost value to b
+			REGISTERS[A] = STACK[SP--]; //Pops topmost value to a
+			REGISTERS[B] = STACK[SP]; //Pops next topmost value to b
+			STACK[SP] = REGISTERS[B] + REGISTERS[A];
+			break;
+		}
+		case SUB: {
+			REGISTERS[A] = STACK[SP--];
+			REGISTERS[B] = STACK[SP];
 
-			SP++;
-			STACK[SP] = A + B;
+			STACK[SP] = REGISTERS[B] - REGISTERS[A];
+			break;
+		}
+		case MUL: {
+			REGISTERS[A] = STACK[SP--];
+			REGISTERS[B] = STACK[SP];
+
+			STACK[SP] = REGISTERS[B] * REGISTERS[A];
+			break;
+		}
+		case DIV: {
+			REGISTERS[A] = STACK[SP--];
+			REGISTERS[B] = STACK[SP];
+
+			STACK[SP] = REGISTERS[B] / REGISTERS[A];
+		}
+		default: {
+			printf("Unknown Instruction %d\n", inst);
+			break;
 		}
 	}
 }
